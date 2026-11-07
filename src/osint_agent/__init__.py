@@ -1,6 +1,7 @@
 """Public API for the OSINT interview-prep agent."""
 from __future__ import annotations
 
+from ._cache import ToolCache
 from .agent import OSINTAgent, ResearchRequest, ResearchResult, run_research
 from .config import Settings, load_settings
 from .evidence import EvidenceLedger, EvidenceRecord
@@ -14,6 +15,7 @@ __all__ = [
     "ResearchRequest",
     "ResearchResult",
     "Settings",
+    "ToolCache",
     "VerifyRow",
     "load_settings",
     "markdown_to_html",
@@ -23,4 +25,4 @@ __all__ = [
     "write_html",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

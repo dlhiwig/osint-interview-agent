@@ -29,6 +29,12 @@ def test_build_registry_with_all_keys_registers_all_tools():
         "screen_opensanctions",
         "wayback_snapshot",
         "fetch_page",
+        "github_user",
+        "github_user_repos",
+        "github_search_users",
+        "opencorporates_officer_search",
+        "orcid_search",
+        "crossref_works",
     }
     assert expected <= set(reg.names())
 
@@ -36,7 +42,17 @@ def test_build_registry_with_all_keys_registers_all_tools():
 def test_build_registry_with_no_search_keys_only_registers_free_tools():
     s = Settings(openai_api_key="x")
     reg = build_registry(s)
-    assert set(reg.names()) == {"screen_opensanctions", "wayback_snapshot", "fetch_page"}
+    assert set(reg.names()) == {
+        "screen_opensanctions",
+        "wayback_snapshot",
+        "fetch_page",
+        "github_user",
+        "github_user_repos",
+        "github_search_users",
+        "opencorporates_officer_search",
+        "orcid_search",
+        "crossref_works",
+    }
 
 
 def test_each_tool_emits_valid_openai_schema():

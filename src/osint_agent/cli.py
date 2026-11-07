@@ -1,13 +1,15 @@
 """Typer-based CLI."""
 from __future__ import annotations
 
+import json as _json
+from dataclasses import asdict
 from pathlib import Path
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
-from .agent import OSINTAgent, ResearchRequest
+from .agent import OSINTAgent, ResearchRequest, ResearchResult
 from .config import load_settings
 from .html_export import write_html
 from .logging_config import configure_logging
@@ -44,19 +46,18 @@ def research(
         "-a",
         help="Operator authorization statement. Required unless --dry-run.",
     ),
-    provider: str = typer.Option(
-        "",
-        help="Override OSINT_LLM_PROVIDER (openai|anthropic).",
-    ),
+    provider: str = typer.Option("", help="Override OSINT_LLM_PROVIDER (openai|anthropic|ollama)."),
     model: str = typer.Option("", help="Override OSINT_LLM_MODEL."),
     out: Path | None = typer.Option(
-        None,
-        help="Report output path. Default: reports/<slug>-<timestamp>.md",
+        None, help="Report output path. Default: reports/<slug>-<timestamp>.md"
     ),
     html: bool = typer.Option(
+        False, "--html", help="Also write an HTML-rendered copy next to the Markdown."
+    ),
+    json_out: bool = typer.Option(
         False,
-        "--html",
-        help="Also write an HTML-rendered copy of the report next to the Markdown.",
+        "--json",
+        help="Also write a sibling .json with structured result (report path, evidence, audit).",
     ),
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Do not call the LLM; list available tools."
@@ -97,20 +98,9 @@ def research(
         )
     )
 
-    if out:
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(result.report_markdown, encoding="utf-8")
-        console.print(f"[green]Report written to[/green] {out}")
-        md_path: Path = out
-    else:
-        md_path = result.report_path  # type: ignore[assignment]
-        console.print(f"[green]Report:  [/green] {md_path}")
+    md_path = _write_outputs(result, out, html, json_out, title=f"Report — {subject}")
 
-    if html and md_path:
-        html_path = md_path.with_suffix(".html")
-        write_html(result.report_markdown, html_path, title=f"Report — {subject}")
-        console.print(f"[green]HTML:    [/green] {html_path}")
-
+    console.print(f"[green]Report:  [/green] {md_path}")
     console.print(f"[green]Evidence:[/green] {result.evidence_path}")
     console.print(f"Evidence records: {len(result.evidence_records)}")
     console.print(f"Audit entries:    {len(result.audit_entries)}")
@@ -122,6 +112,7 @@ def self_audit(
     role: str = typer.Option("", help="Your role, for context."),
     out: Path | None = typer.Option(None, help="Report output path."),
     html: bool = typer.Option(False, "--html", help="Also write an HTML copy."),
+    json_out: bool = typer.Option(False, "--json", help="Also write a sibling .json."),
     provider: str = typer.Option("", help="Override OSINT_LLM_PROVIDER."),
     model: str = typer.Option("", help="Override OSINT_LLM_MODEL."),
 ) -> None:
@@ -150,33 +141,22 @@ def self_audit(
         ResearchRequest(subject_name=name, context=context, authorization=authorization)
     )
 
-    if out:
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(result.report_markdown, encoding="utf-8")
-        md_path: Path = out
-        console.print(f"[green]Self-audit report:[/green] {md_path}")
-    else:
-        md_path = result.report_path  # type: ignore[assignment]
-        console.print(f"[green]Self-audit report:[/green] {md_path}")
-
-    if html and md_path:
-        html_path = md_path.with_suffix(".html")
-        write_html(result.report_markdown, html_path, title=f"Self-audit — {name}")
-        console.print(f"[green]HTML:             [/green] {html_path}")
-
+    md_path = _write_outputs(result, out, html, json_out, title=f"Self-audit — {name}")
+    console.print(f"[green]Self-audit report:[/green] {md_path}")
     console.print(f"[green]Evidence:         [/green] {result.evidence_path}")
 
 
 @app.command()
 def verify(
-    evidence_csv: Path = typer.Argument(..., exists=True, help="Path to an evidence CSV from an earlier run."),
+    evidence_csv: Path = typer.Argument(
+        ..., exists=True, help="Path to an evidence CSV from an earlier run."
+    ),
     fail_threshold: int = typer.Option(
-        0,
-        help="Exit with code 1 if more than this many URLs are unreachable.",
+        0, help="Exit with code 1 if more than this many URLs are unreachable."
     ),
 ) -> None:
     """Re-check every source URL in a prior evidence CSV (link-rot probe)."""
-    from .verify import summarize, verify_csv  # local to keep CLI import light
+    from .verify import summarize, verify_csv
 
     rows = verify_csv(evidence_csv)
     summary = summarize(rows)
@@ -208,6 +188,40 @@ def version() -> None:
     console.print(__version__)
 
 
+def _write_outputs(
+    result: ResearchResult,
+    out: Path | None,
+    html: bool,
+    json_out: bool,
+    *,
+    title: str,
+) -> Path:
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result.report_markdown, encoding="utf-8")
+        md_path = out
+    else:
+        md_path = result.report_path  # type: ignore[assignment]
+
+    if html and md_path:
+        html_path = md_path.with_suffix(".html")
+        write_html(result.report_markdown, html_path, title=title)
+        console.print(f"[green]HTML:    [/green] {html_path}")
+
+    if json_out and md_path:
+        json_path = md_path.with_suffix(".json")
+        payload = {
+            "report_path": str(md_path),
+            "evidence_path": str(result.evidence_path) if result.evidence_path else None,
+            "evidence_records": [asdict(r) for r in result.evidence_records],
+            "audit_entries": result.audit_entries,
+        }
+        json_path.write_text(_json.dumps(payload, indent=2, default=str), encoding="utf-8")
+        console.print(f"[green]JSON:    [/green] {json_path}")
+
+    return md_path
+
+
 def _dry_run(settings, subject: str) -> None:
     table = Table(title=f"Tool availability (subject: {subject})")
     table.add_column("Tool")
@@ -218,6 +232,8 @@ def _dry_run(settings, subject: str) -> None:
     console.print(f"[cyan]LLM provider:[/cyan] {settings.osint_llm_provider}")
     console.print(f"[cyan]LLM model:   [/cyan] {settings.osint_llm_model}")
     console.print(f"[cyan]Max turns:   [/cyan] {settings.osint_max_tool_turns}")
+    console.print(f"[cyan]Workers:     [/cyan] {settings.osint_tool_workers}")
+    console.print(f"[cyan]Cache:       [/cyan] {'on' if settings.osint_enable_cache else 'off'}")
     console.print(f"[cyan]Report dir:  [/cyan] {settings.osint_report_dir}")
 
 

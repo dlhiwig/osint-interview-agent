@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-Provider = Literal["openai", "anthropic"]
+Provider = Literal["openai", "anthropic", "ollama"]
 
 
 class Settings(BaseSettings):
@@ -28,15 +28,20 @@ class Settings(BaseSettings):
     serper_api_key: str | None = None
     brave_search_api_key: str | None = None
 
-    # Public records
+    # Public records / research sources
     fec_api_key: str | None = None
     sec_edgar_user_agent: str | None = None
+    opencorporates_api_key: str | None = None
 
     # Agent config
     osint_llm_provider: Provider = "openai"
     osint_llm_model: str = "gpt-4o"
+    osint_llm_base_url: str | None = None
     osint_max_tool_turns: int = Field(default=20, ge=1, le=100)
     osint_report_dir: Path = Path("reports")
+    osint_enable_cache: bool = True
+    osint_tool_workers: int = Field(default=4, ge=1, le=16)
+    osint_ollama_base_url: str = "http://127.0.0.1:11434/v1"
 
     def available_tools(self) -> dict[str, bool]:
         """Map tool name → whether its required credentials are present."""
@@ -50,6 +55,9 @@ class Settings(BaseSettings):
             "screen_opensanctions": True,
             "wayback_snapshot": True,
             "fetch_page": True,
+            "github_user / github_user_repos / github_search_users": True,
+            "opencorporates_officer_search": True,
+            "orcid_search / crossref_works": True,
             "record_evidence": True,
         }
 
@@ -62,6 +70,7 @@ class Settings(BaseSettings):
             raise RuntimeError(
                 "OSINT_LLM_PROVIDER=anthropic but ANTHROPIC_API_KEY is not set."
             )
+        # Ollama uses OpenAI-compatible API but needs no key.
 
 
 def load_settings() -> Settings:

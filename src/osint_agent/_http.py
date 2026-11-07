@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 import httpx
@@ -10,11 +12,30 @@ import httpx
 DEFAULT_TIMEOUT = 30.0
 DEFAULT_MAX_ATTEMPTS = 3
 DEFAULT_BACKOFF_BASE = 1.0  # seconds; grows 1, 2, 4, ...
+MAX_BACKOFF = 30.0
 
-# Transient statuses we retry.
 RETRY_STATUSES: frozenset[int] = frozenset({408, 425, 429, 500, 502, 503, 504})
 
 log = logging.getLogger("osint_agent.http")
+
+
+def _parse_retry_after(value: str | None) -> float | None:
+    """Parse a Retry-After header value (seconds or HTTP-date) into seconds."""
+    if not value:
+        return None
+    value = value.strip()
+    if value.isdigit():
+        return float(value)
+    try:
+        dt = parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    delta = (dt - datetime.now(UTC)).total_seconds()
+    return max(0.0, delta)
 
 
 class _Retrier:
@@ -47,6 +68,14 @@ class _Retrier:
             return exc.response.status_code in RETRY_STATUSES
         return False
 
+    def _wait_for(self, exc: BaseException, attempt: int) -> float:
+        # Honor Retry-After on 429 / 503 when present.
+        if isinstance(exc, httpx.HTTPStatusError):
+            ra = _parse_retry_after(exc.response.headers.get("Retry-After"))
+            if ra is not None:
+                return min(MAX_BACKOFF, ra)
+        return min(MAX_BACKOFF, self.backoff_base * (2 ** attempt))
+
     def run(self, call):  # type: ignore[no-untyped-def]
         last_exc: BaseException | None = None
         for attempt in range(self.max_attempts):
@@ -56,7 +85,7 @@ class _Retrier:
                 last_exc = e
                 if attempt == self.max_attempts - 1 or not self._should_retry(e):
                     raise
-                wait = self.backoff_base * (2 ** attempt)
+                wait = self._wait_for(e, attempt)
                 log.warning(
                     "http retry %d/%d after %s: sleeping %.2fs",
                     attempt + 1,
@@ -65,7 +94,6 @@ class _Retrier:
                     wait,
                 )
                 self.sleeper(wait)
-        # unreachable, but keep type checker happy
         raise last_exc or RuntimeError("retrier exhausted with no exception")
 
 
@@ -117,14 +145,13 @@ def request_text(
     return retrier.run(_call)
 
 
-def head_ok(url: str, *, timeout: float = 15.0, sleeper=time.sleep) -> tuple[bool, int]:
+def head_ok(url: str, *, timeout: float = 15.0) -> tuple[bool, int]:
     """Return (ok, status). ok is True iff the URL returns < 400. Follows redirects.
 
     Does not retry: this is a liveness probe, not a fetch.
     """
     try:
         with httpx.Client(timeout=timeout, follow_redirects=True) as client:
-            # Many sites reject HEAD; fall back to a small-range GET.
             try:
                 resp = client.head(url)
                 if resp.status_code == 405:
