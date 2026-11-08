@@ -4,6 +4,7 @@ from __future__ import annotations
 import html as _html
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 _CSS = """
 :root { color-scheme: light dark; }
@@ -47,7 +48,7 @@ blockquote {
 
 
 def _escape(s: str) -> str:
-    return _html.escape(s, quote=False)
+    return _html.escape(s, quote=True)
 
 
 def _render_inline(text: str) -> str:
@@ -56,12 +57,20 @@ def _render_inline(text: str) -> str:
     out = _escape(text)
     # Inline code
     out = re.sub(r"`([^`]+)`", r"<code>\1</code>", out)
-    # Links [text](url)
-    out = re.sub(
-        r"\[([^\]]+)\]\(([^)\s]+)\)",
-        lambda m: f'<a href="{m.group(2)}" rel="nofollow noopener">{m.group(1)}</a>',
-        out,
-    )
+    # Only allow ordinary web URLs. Never turn an untrusted source value into
+    # a javascript:, data:, file:, or other executable/privileged link.
+    def safe_link(match: re.Match[str]) -> str:
+        href = _html.unescape(match.group(2))
+        try:
+            parsed = urlsplit(href)
+        except ValueError:
+            return match.group(1)
+        if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+            return match.group(1)
+        safe_href = _html.escape(href, quote=True)
+        return f'<a href="{safe_href}" rel="nofollow noopener">{match.group(1)}</a>'
+
+    out = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", safe_link, out)
     # Bold **text**
     out = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", out)
     # Italic *text* (single, not part of **)

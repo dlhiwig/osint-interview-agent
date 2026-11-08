@@ -8,6 +8,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Provider = Literal["openai", "anthropic", "ollama"]
+ReportMode = Literal["standard", "source_brief"]
 
 
 class Settings(BaseSettings):
@@ -39,6 +40,7 @@ class Settings(BaseSettings):
     osint_llm_base_url: str | None = None
     osint_max_tool_turns: int = Field(default=20, ge=1, le=100)
     osint_report_dir: Path = Path("reports")
+    osint_report_mode: ReportMode = "standard"
     osint_enable_cache: bool = True
     osint_tool_workers: int = Field(default=4, ge=1, le=16)
     osint_ollama_base_url: str = "http://127.0.0.1:11434/v1"

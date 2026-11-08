@@ -1,6 +1,6 @@
 # osint-interview-agent
 
-A Python agent that drafts a **public-source background research report** on a specific authorized subject prior to a job interview. It operationalizes an OSINT-librarian methodology against grounded search backends and free public-record APIs, and emits a Markdown report plus an append-only CSV evidence ledger that cites every claim.
+A Python agent for **authorized, source-backed public research**. It supports standard background research reports and an optional source-first analyst brief with exact document locators and evidence review states. It operationalizes an OSINT-librarian methodology against grounded search backends and free public-record APIs, and emits a Markdown report plus an append-only CSV evidence ledger that cites every claim.
 
 - Standalone package, importable by other Python agents (including Hermes).
 - Provider-agnostic LLM (OpenAI or Anthropic), selected by env var.
@@ -13,9 +13,9 @@ A Python agent that drafts a **public-source background research report** on a s
 
 ## ⚠️ Not a consumer report
 
-**Read this before using the agent for anything that could affect a hiring decision.**
+**Read this before using the agent for anything that could affect a consequential decision.**
 
-This agent produces **informal public-source research**. It is **not** a consumer report under the Fair Credit Reporting Act (FCRA) and **must not be used as the sole or primary basis** for a decision concerning employment, housing, credit, insurance, or any other FCRA-covered purpose. If you need a background check that *is* legally defensible for such a decision, engage a licensed consumer reporting agency; the FCRA imposes specific notice, consent, pre-adverse-action, and dispute procedures that this tool does not perform and cannot substitute for.
+This agent is designed for **informal, authorized public-source research**, not regulated background screening. Whether its output is a consumer report under the Fair Credit Reporting Act (FCRA) depends on how information is assembled, furnished, and used; a disclaimer does not determine legal status. **Do not use this tool to make employment, housing, credit, insurance, or similar eligibility decisions** without appropriate legal advice and a compliant process. The software does not implement FCRA notice, authorization, dispute, or adverse-action requirements.
 
 Operator responsibilities:
 
@@ -102,7 +102,7 @@ print(result.evidence_path)
 
 ## Design
 
-See `../.claude/plans/a-ai-agent-that-draft-staged-nebula.md` for the full plan.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the roadmap and current gaps. For personal Toba/mobile planning, see [`docs/PRIVATE_OPERATOR_DEPLOYMENT.md`](docs/PRIVATE_OPERATOR_DEPLOYMENT.md). For the internal source-first report format, see [`docs/SOURCE_BRIEF_GUIDE.md`](docs/SOURCE_BRIEF_GUIDE.md).
 
 Prompts live in `src/osint_agent/prompts/`:
 - `system.md` — the active execution-oriented system prompt.
@@ -113,8 +113,9 @@ Prompts live in `src/osint_agent/prompts/`:
 
 - No username-correlation tools (Sherlock / Maigret). High false-positive risk.
 - No facial recognition, reverse-image, phone-number lookup, breach-data search.
-- No PDF/HTML export in v1. Markdown only.
-- No web UI. CLI + Python API only.
+- No native PDF export. Markdown, HTML, structured JSON, and evidence CSV are supported.
+- No web UI. CLI + Python API only. Mobile access is planned, not implemented.
+- No automated identity confirmation. Search matches remain unverified leads until independently corroborated.
 
 ## Tests
 

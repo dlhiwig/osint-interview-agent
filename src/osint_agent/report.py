@@ -21,6 +21,7 @@ def render_report(
     final_narrative: str,
     evidence: EvidenceLedger,
     audit: AuditLog,
+    report_mode: str = "standard",
 ) -> str:
     env = Environment(
         loader=FileSystemLoader(str(_TEMPLATE_DIR)),
@@ -29,7 +30,10 @@ def render_report(
         trim_blocks=True,
         lstrip_blocks=True,
     )
-    tmpl = env.get_template("report_template.md")
+    if report_mode not in {"standard", "source_brief"}:
+        raise ValueError("Unsupported report mode")
+    template_name = "source_brief.md" if report_mode == "source_brief" else "report_template.md"
+    tmpl = env.get_template(template_name)
     return tmpl.render(
         request=request,
         final_narrative=(final_narrative or "").strip(),
