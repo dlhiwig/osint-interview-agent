@@ -12,6 +12,10 @@ Confidence = Literal["Low", "Medium", "High"]
 FIELDS = (
     "claim",
     "source_url",
+    "source_title",
+    "document_locator",
+    "archive_url",
+    "source_sha256",
     "source_type",
     "pub_date",
     "accessed_at",
@@ -21,6 +25,7 @@ FIELDS = (
     "caveats",
     "confidence",
     "notes",
+    "review_status",
 )
 
 
@@ -33,7 +38,12 @@ class EvidenceRecord:
     claim: str
     source_url: str
     confidence: Confidence = "Low"
+    source_title: str = ""
+    document_locator: str = ""
+    archive_url: str = ""
+    source_sha256: str = ""
     source_type: str = ""
+    review_status: str = "unreviewed"
     pub_date: str = ""
     accessed_at: str = field(default_factory=_now_iso)
     extract: str = ""
