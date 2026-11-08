@@ -1,6 +1,6 @@
 # osint-interview-agent
 
-A Python agent that drafts a **public-source background research report** on a specific authorized subject prior to a job interview. It operationalizes an OSINT-librarian methodology against grounded search backends and free public-record APIs, and emits a Markdown report plus an append-only CSV evidence ledger that cites every claim.
+A Python agent for **authorized, source-backed public research**. It supports standard background research reports and an optional source-first analyst brief with exact document locators and evidence review states. It operationalizes an OSINT-librarian methodology against grounded search backends and free public-record APIs, and emits a Markdown report plus an append-only CSV evidence ledger that cites every claim.
 
 - Standalone package, importable by other Python agents (including Hermes).
 - Provider-agnostic LLM (OpenAI or Anthropic), selected by env var.
@@ -102,7 +102,7 @@ print(result.evidence_path)
 
 ## Design
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the roadmap and current gaps.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the roadmap and current gaps. For personal Toba/mobile planning, see [`docs/PRIVATE_OPERATOR_DEPLOYMENT.md`](docs/PRIVATE_OPERATOR_DEPLOYMENT.md). For the internal source-first report format, see [`docs/SOURCE_BRIEF_GUIDE.md`](docs/SOURCE_BRIEF_GUIDE.md).
 
 Prompts live in `src/osint_agent/prompts/`:
 - `system.md` — the active execution-oriented system prompt.
@@ -114,7 +114,7 @@ Prompts live in `src/osint_agent/prompts/`:
 - No username-correlation tools (Sherlock / Maigret). High false-positive risk.
 - No facial recognition, reverse-image, phone-number lookup, breach-data search.
 - No native PDF export. Markdown, HTML, structured JSON, and evidence CSV are supported.
-- No web UI. CLI + Python API only.
+- No web UI. CLI + Python API only. Mobile access is planned, not implemented.
 - No automated identity confirmation. Search matches remain unverified leads until independently corroborated.
 
 ## Tests
