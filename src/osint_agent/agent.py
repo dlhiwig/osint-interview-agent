@@ -136,6 +136,7 @@ class OSINTAgent:
             final_narrative=final_narrative,
             evidence=ledger,
             audit=audit,
+            report_mode=self.settings.osint_report_mode,
         )
         report_path, evidence_path = self._save_outputs(request, report_md, ledger, audit)
 
@@ -221,6 +222,10 @@ class OSINTAgent:
             allowed = {
                 "claim",
                 "source_url",
+                "source_title",
+                "document_locator",
+                "archive_url",
+                "source_sha256",
                 "confidence",
                 "source_type",
                 "pub_date",
@@ -247,6 +252,10 @@ class OSINTAgent:
                 "type": "object",
                 "properties": {
                     "claim": {"type": "string", "description": "Short factual statement."},
+                    "source_title": {"type": "string", "description": "Original title of public source."},
+                    "document_locator": {"type": "string", "description": "Exact page, paragraph, section, or record number."},
+                    "archive_url": {"type": "string", "description": "Verified link to preserved copy, if available."},
+                    "source_sha256": {"type": "string", "description": "Actual file SHA-256 if independently computed; do not invent."},
                     "source_url": {"type": "string", "description": "Direct URL to the source."},
                     "source_type": {
                         "type": "string",
@@ -313,6 +322,7 @@ class OSINTAgent:
             f"{request.authorization or '(not supplied — scope must remain narrow)'}"
         )
         lines.append("")
+        lines.append(f"Report mode: {self.settings.osint_report_mode}")
         lines.append(
             "Research the subject using the available tools, following the system prompt's "
             "workflow. You may emit SEVERAL tool calls in a single turn — the harness executes "
