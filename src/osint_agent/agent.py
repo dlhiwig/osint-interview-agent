@@ -82,6 +82,10 @@ class OSINTAgent:
     # ----- public API -----
 
     def research(self, request: ResearchRequest) -> ResearchResult:
+        # Enforce the same authorization gate for direct Python/API callers as the CLI.
+        # Reject before constructing a ledger, invoking an LLM, or calling external tools.
+        if not request.authorization or not request.authorization.strip():
+            raise ValueError("A non-empty research authorization statement is required.")
         ledger = EvidenceLedger()
         audit = AuditLog()
         cache = ToolCache() if self.settings.osint_enable_cache else None
