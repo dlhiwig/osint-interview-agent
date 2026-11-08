@@ -86,4 +86,4 @@ Do not restate every evidence row. Do not opine on character, trustworthiness, "
 
 End the narrative with this exact paragraph:
 
-> This report is informal public-source research. It is not a consumer report under the Fair Credit Reporting Act and must not be used as the sole or primary basis for a hiring, housing, credit, or insurance decision. Name matches are not identity confirmations; arrests are not convictions; absence of a finding is not evidence of absence. For consequential decisions, engage a lawful consumer reporting agency.
+> This report is informal public-source research and is not designed as a legally compliant background screening product. Whether a report is a consumer report under the Fair Credit Reporting Act depends on how it is assembled, furnished, and used; labeling it informal does not determine its legal status. Do not use this report for employment, housing, credit, insurance, or similar eligibility decisions without appropriate legal review and a compliant process. Name matches are not identity confirmations; arrests are not convictions; absence of a finding is not evidence of absence.
