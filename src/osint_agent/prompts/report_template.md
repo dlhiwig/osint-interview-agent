@@ -72,7 +72,7 @@ See per-row `identity_match` rationales in §5. Rows with **Low** confidence or 
 - Public-source research cannot establish facts about non-public conduct.
 - Online records can be outdated, mis-attributed, or fabricated.
 - Automated searches may miss the correct subject when multiple people share a name.
-- This report is **not a consumer report under the Fair Credit Reporting Act** and must not be used as the sole or primary basis for a hiring, housing, credit, or insurance decision.
+- This tool is **not designed for legally compliant background screening**. Whether its output constitutes a consumer report under the Fair Credit Reporting Act depends on its preparation and use. Do not use it for employment, housing, credit, insurance, or similar eligibility decisions without appropriate legal review and a compliant process.
 
 ---
 
